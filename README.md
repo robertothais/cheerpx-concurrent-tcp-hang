@@ -1,6 +1,6 @@
 # CheerpX concurrent TCP hang
 
-Minimal reproducer for a hang inside a process when several pthreads concurrently perform TCP loopback I/O. At N=6 client pthreads the hang fires reliably; at N=4-5 it fires intermittently across runs.
+Minimal reproducer for a hang inside a process when several pthreads concurrently perform TCP loopback I/O. At N=6 client pthreads the hang fires reliably; at N=5 it fires intermittently across runs.
 
 Individual `connect(2)` and `read(2)` calls stop returning within the test deadline. No syscall returns an error, no exception is raised, and the CheerpX VM itself stays responsive: only the affected pthreads are stuck. The same statically-linked i386 binary completes at N=50+ outside CheerpX.
 
