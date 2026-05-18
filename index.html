@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>cheerpx-concurrent-tcp-hang</title>
+        <style>
+            body {
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                background: #111;
+                color: #ddd;
+                padding: 1.5em;
+                line-height: 1.4;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>cheerpx-concurrent-tcp-hang</h1>
+        <div id="status">initializing…</div>
+        <pre id="output"></pre>
+
+        <script type="module">
+            import { StreamNetwork } from "./network.js";
+
+            const status = document.getElementById("status");
+            const output = document.getElementById("output");
+            const log = (line) => {
+                output.textContent += `${line}\n`;
+                console.info(line);
+            };
+            const setStatus = (s, cls = "") => {
+                status.textContent = s;
+                status.className = cls;
+                log(`>>> ${s}`);
+            };
+
+            const params = new URLSearchParams(window.location.search);
+            const version = params.get("v");
+            const n = params.get("n") ?? "6";
+            const deadline = params.get("deadline") ?? "3000";
+            if (!version) {
+                setStatus("Missing ?v= parameter (e.g. ?v=1.3.2)", "error");
+                window.testError = "no version";
+                throw new Error("no version");
+            }
+
+            const BINARY = "/usr/local/bin/main";
+
+            (async () => {
+                try {
+                    setStatus(`loading CheerpX ${version}…`);
+                    const CheerpX = await import(
+                        `https://cxrtnc.leaningtech.com/${version}/cx.esm.js`
+                    );
+
+                    const blockDevice =
+                        await CheerpX.HttpBytesDevice.create("out.ext2");
+                    const idbOverlay = await CheerpX.IDBDevice.create(
+                        "concurrent-tcp-hang-overlay",
+                    );
+                    await idbOverlay.reset();
+                    const overlayDevice = await CheerpX.OverlayDevice.create(
+                        blockDevice,
+                        idbOverlay,
+                    );
+
+                    const network = new StreamNetwork();
+                    const cx = await CheerpX.Linux.create({
+                        mounts: [
+                            { type: "ext2", path: "/", dev: overlayDevice },
+                            { type: "devs", path: "/dev" },
+                            { type: "proc", path: "/proc" },
+                        ],
+                        networkInterface: network,
+                    });
+
+                    let resultLine = null;
+                    cx.setCustomConsole(
+                        (data) => {
+                            const text = new TextDecoder()
+                                .decode(data)
+                                .trimEnd();
+                            log(text);
+                            const m = text.match(
+                                /RESULT:\s+(\d+)\/(\d+)\s+done/,
+                            );
+                            if (m) {
+                                resultLine = { done: +m[1], n: +m[2] };
+                            }
+                        },
+                        80,
+                        24,
+                    );
+
+                    Object.assign(window, { cx, network });
+
+                    setStatus(`running ${BINARY} ${n} ${deadline}…`);
+                    const exitCode = await cx.run(BINARY, [n, deadline], {
+                        uid: 0,
+                        gid: 0,
+                    });
+
+                    window.testResult = resultLine;
+                    window.testExitCode = exitCode;
+
+                    if (resultLine && resultLine.done === resultLine.n) {
+                        setStatus(
+                            `all ${resultLine.done}/${resultLine.n} completed (exit ${exitCode})`,
+                            "good",
+                        );
+                        window.testComplete = true;
+                    } else if (resultLine) {
+                        setStatus(
+                            `wedged: only ${resultLine.done}/${resultLine.n} completed (exit ${exitCode})`,
+                            "error",
+                        );
+                        window.testWedged = true;
+                    } else {
+                        setStatus(
+                            `no RESULT line emitted (exit ${exitCode})`,
+                            "error",
+                        );
+                        window.testError = "no result line";
+                    }
+                } catch (e) {
+                    setStatus(`FAIL: ${e.message}`, "error");
+                    window.testError = e.message;
+                }
+            })();
+        </script>
+    </body>
+</html>
