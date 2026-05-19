@@ -15,4 +15,4 @@ RUN gcc -O2 -static -pthread -o /usr/local/bin/main /tmp/main.c \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/*
 
-CMD ["/usr/local/bin/main", "6", "3000"]
+CMD ["/usr/local/bin/main"]

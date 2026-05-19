@@ -1,5 +1,5 @@
 /* One listener pthread + N client pthreads, loopback TCP on :9559.
- * Usage: main [N] [deadline_ms]    defaults: N=6, deadline=3000 */
+ * Usage: main [N] [deadline_ms]    defaults: N=8, deadline=3000 */
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -105,7 +105,7 @@ static void *client_fn(void *arg) {
 }
 
 int main(int argc, char **argv) {
-    int n = (argc > 1) ? atoi(argv[1]) : 6;
+    int n = (argc > 1) ? atoi(argv[1]) : 8;
     int deadline_ms = (argc > 2) ? atoi(argv[2]) : 3000;
     fprintf(stderr, "burst n=%d deadline=%dms\n", n, deadline_ms);
 

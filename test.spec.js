@@ -3,8 +3,8 @@ const { test, expect } = require("@playwright/test");
 const version = process.env.CHEERPX_VERSION;
 if (!version) throw new Error("CHEERPX_VERSION env required");
 
-const n = process.env.N ?? "6";
-const deadline = process.env.DEADLINE_MS ?? "3000";
+const n = process.env.N;
+const deadline = process.env.DEADLINE_MS;
 
 test(`concurrent-tcp-hang ${version} N=${n}`, async ({ page }) => {
   page.on("console", (msg) =>
