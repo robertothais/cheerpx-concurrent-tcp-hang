@@ -4,7 +4,7 @@
 FROM --platform=linux/386 debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        gcc libc6-dev \
+    gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY main.c /tmp/

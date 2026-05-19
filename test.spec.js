@@ -32,7 +32,10 @@ test(`concurrent-tcp-hang ${version} N=${n}`, async ({ page }) => {
     outcome = await handle.jsonValue();
   } catch (e) {
     if (e.name === "TimeoutError") {
-      outcome = { kind: "wedged", reason: "main itself stuck — no RESULT in 10s" };
+      outcome = {
+        kind: "wedged",
+        reason: "main itself stuck — no RESULT in 10s",
+      };
     } else {
       throw e;
     }
